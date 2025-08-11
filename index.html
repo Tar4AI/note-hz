@@ -37,9 +37,9 @@
   .btn:hover{transform:translateY(-1px); border-color:#475569}
   .btn.on{border-color:var(--accent2); box-shadow:0 0 0 2px rgba(34,211,238,.15); color:#cffafe}
 
-  .grid4{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:12px; min-height:96px}
+  .grid4{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:12px;}
   .box{display:flex; flex-direction:column; justify-content:center; border:1px solid #334155; background:rgba(30,41,59,.6); border-radius:12px; padding:10px 12px}
-  .box .value{min-height:1.6em; display:block}
+  .box .value{display:block}
 
   .kbd-wrap{position:relative; display:flex; gap:16px}
   .keyboard{position:relative; overflow-x:auto; padding:16px; border-radius:12px; background:rgba(0,0,0,.15); flex:1}
@@ -66,7 +66,7 @@
     .black{height:var(--black-height-lg); width:var(--black-width-lg)}
   }
 
-  /* ---------- Mobile-friendly layout (landscape focus) ---------- */
+  /* ---------- Mobile landscape base ---------- */
   :root{ --whiteH: clamp(160px, 38vh, 240px); }
   .card{ padding:12px; border-radius:14px }
   .label{ font-size:11px }
@@ -75,7 +75,7 @@
   .white{ height:var(--whiteH) }
   .black{ height:calc(var(--whiteH)*0.62); width:calc(var(--cellW)*0.55) }
 
-  /* Landscape phones — คง 4 ช่องไว้บรรทัดเดียว */
+  /* มือถือแนวนอน: 4 ช่องในบรรทัดเดียวเสมอ + ปรับขนาด */
   @media screen and (max-width: 920px) and (orientation: landscape){
     .wrap{ max-width: 100vw; padding:10px }
     h1{ font-size:clamp(16px,2.2vw,20px); margin:4px 0 8px }
@@ -89,7 +89,7 @@
     .keyboard{ padding:10px }
   }
 
-  /* อุปกรณ์ที่เตี้ยมาก — ยังคง 4 ช่องเหมือนกัน */
+  /* อุปกรณ์ที่เตี้ยมาก: ยังคง 4 ช่อง แต่รัดพิเศษ */
   @media screen and (max-height: 420px) and (orientation: landscape){
     .grid4{ grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px }
     .box{ padding:6px 8px }
@@ -97,6 +97,16 @@
     .value{ font-size:clamp(13px,1.9vw,17px) }
     :root{ --cellW: clamp(42px, 6.6vw, 62px) }
     .white{ height:clamp(140px, 34vh, 200px) }
+  }
+
+  /* ---------- Compact cards (สูงพอดีตัวอักษร) ---------- */
+  #row4{ min-height:0; }
+  #row4 .box{ padding:6px 10px; }
+  #row4 .label{ margin-bottom:2px; }
+  #row4 .value{ line-height:1.15; }
+  @media (max-width:920px) and (orientation:landscape){
+    #row4 .box{ padding:6px 8px; }
+    #row4 .value{ font-size:clamp(14px,2.0vw,18px); }
   }
 </style>
 </head>
@@ -362,7 +372,7 @@
     }
   });
 
-  // UI
+  // UI helpers
   function labelWithEnharmonic(note){
     const m = note.match(/^([A-G])(#)(\d)$/);
     if(!m) return note;
@@ -429,6 +439,7 @@
 
   buildKeyboard({start:3,end:4}); // default
   updateRowValues(null);
-})();</script>
+})();
+</script>
 </body>
 </html>
