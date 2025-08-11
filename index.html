@@ -73,17 +73,14 @@
   .oct-btn:hover{border-color:#475569; transform:translateY(-1px)}
   .oct-btn.active{border-color:var(--accent2); box-shadow:0 0 0 2px rgba(34,211,238,.15), 0 12px 24px rgba(0,0,0,.35); color:#cffafe}
 
-  @media (max-width:860px){
+  /* เดิมเราให้ <860px เป็นคอลัมน์ ตอนนี้เปลี่ยนเป็นเฉพาะ "แนวตั้ง" เท่านั้น */
+  @media (max-width: 900px) and (orientation: portrait){
     .kbd-wrap{flex-direction:column}
     .rail{width:100%; flex-direction:row; justify-content:space-between; gap:10px}
     .oct-btn{flex:1}
   }
-  @media (min-width:900px){
-    .white{height:220px}
-    .black{height:var(--black-height-lg); width:var(--black-width-lg)}
-  }
 
-  /* ---------- Mobile landscape base ---------- */
+  /* มือถือแนวนอน: คงรูปแบบ “ปุ่มอยู่ด้านข้าง” และปรับสัดส่วนให้พอดี */
   :root{ --whiteH: clamp(160px, 38vh, 240px); }
   .card{ padding:12px; border-radius:14px }
   .label{ font-size:11px }
@@ -92,8 +89,7 @@
   .white{ height:var(--whiteH) }
   .black{ height:calc(var(--whiteH)*0.62); width:calc(var(--cellW)*0.55) }
 
-  /* มือถือแนวนอน: 4 กล่องในบรรทัดเดียว + ปรับขนาด */
-  @media screen and (max-width:920px) and (orientation:landscape){
+  @media screen and (max-width: 920px) and (orientation:landscape){
     .wrap{ max-width:100vw; padding:10px;
       padding-left:max(10px, env(safe-area-inset-left));
       padding-right:max(10px, env(safe-area-inset-right));
@@ -107,10 +103,12 @@
     .box{ padding:8px 10px }
     :root{ --cellW: clamp(44px, 6.8vw, 64px) }
     .keyboard{ padding:10px }
+    .rail{ width:clamp(88px, 14vw, 120px); gap:10px }
+    .oct-btn{ padding:12px 8px }
   }
 
-  /* อุปกรณ์ที่เตี้ยมาก: ยังคง 4 กล่อง แต่รัดพิเศษ */
-  @media screen and (max-height:420px) and (orientation:landscape){
+  /* อุปกรณ์ที่เตี้ยมาก: ยังให้ 4 กล่องต่อบรรทัดแต่รัดขนาด */
+  @media screen and (max-height: 420px) and (orientation: landscape){
     .grid4{ grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px }
     .box{ padding:6px 8px }
     .label{ font-size:10px }
@@ -119,7 +117,7 @@
     .white{ height:clamp(140px, 34vh, 200px) }
   }
 
-  /* ---------- Compact cards (สูงพอดีตัวอักษร) ---------- */
+  /* การ์ด 4 ช่องให้เตี้ยพอดีข้อความ */
   #row4{ min-height:0; }
   #row4 .box{ padding:6px 10px; }
   #row4 .label{ margin-bottom:2px; }
@@ -127,6 +125,11 @@
   @media (max-width:920px) and (orientation:landscape){
     #row4 .box{ padding:6px 8px; }
     #row4 .value{ font-size:clamp(14px,2.0vw,18px); }
+  }
+
+  @media (min-width: 900px){
+    .white{height:220px}
+    .black{height:var(--black-height-lg); width:var(--black-width-lg)}
   }
 </style>
 </head>
@@ -190,7 +193,6 @@
 
 <script>
 (function(){
-  const A4 = 440;
   const order = ["C","D","E","F","G","A","B"];
   const hasBlack = { C:true, D:true, E:false, F:true, G:true, A:true, B:false };
   const sharpOf = { C:"C#", D:"D#", F:"F#", G:"G#", A:"A#" };
@@ -211,6 +213,14 @@
   const valH3 = document.getElementById('val-h3');
   const valH4 = document.getElementById('val-h4');
 
+  // Hz → string (≥1000 Hz เป็น kHz 3 ตำแหน่ง)
+  function fmtHz(x){
+    if (x==null || !isFinite(x)) return '—';
+    if (x >= 1000) return (x/1000).toFixed(3) + ' kHz';
+    return x.toFixed(2) + ' Hz';
+  }
+
+  // Note/Freq helpers
   function noteToMidi(note){
     const m = note.match(/^([A-Ga-g])([#b]?)(\d)$/);
     if(!m) return null;
@@ -222,14 +232,7 @@
   const midiToFreq = m => 440 * Math.pow(2, (m - 69)/12);
   const noteToFreq = n => { const m = noteToMidi(n); return m==null? null : midiToFreq(m); };
 
-  // แสดง Hz เป็น kHz ถ้า ≥ 1000 Hz
-  function fmtHz(x){
-    if (x==null || !isFinite(x)) return '—';
-    if (x >= 1000) return (x/1000).toFixed(3) + ' kHz';
-    return x.toFixed(2) + ' Hz';
-  }
-
-  // Master
+  // Audio master
   let audioCtx = null, master = null;
   function getCtx(){
     if(!audioCtx){ const Ctx = window.AudioContext || window.webkitAudioContext; audioCtx = new Ctx(); }
@@ -239,10 +242,10 @@
   }
   function toMaster(n){ return n.connect(master); }
 
-  // เบสิกโทน + hi-atten บนโหมดพื้นฐาน
+  // โหมดพื้นฐาน: ลดความดังย่านสูง
   function hiAttenBasic(freq){
-    if (freq >= 4180) return 0.25;         // C8–B8
-    if (freq >= 2090) return 0.5;          // C7–B7
+    if (freq >= 4180) return 0.25; // C8–B8
+    if (freq >= 2090) return 0.5;  // C7–B7
     return 1.0;
   }
   function playTone(freq, dur=0.8){
@@ -319,7 +322,8 @@
     gate.gain.setValueAtTime(0.0001, now);
     gate.gain.linearRampToValueAtTime(tgt, now + attackMs/1000);
 
-    excOsc.start(now); noise.start(now); noise.stop(now + 0.14);
+    noise.start(now); noise.stop(now + 0.14);
+    excOsc.start(now);
     fbGraph = {ctx, gate, fb, excOsc, noise};
   }
   function stopFeedback(immediate=false){
@@ -455,7 +459,7 @@
     }
   }
 
-  buildKeyboard({start:3,end:4}); // default C3–B4
+  buildKeyboard({start:3,end:4}); // เริ่มที่ C3–B4
   updateRowValues(null);
 })();
 </script>
